@@ -1,0 +1,48 @@
+{
+  "name": "shippable.reqKick",
+  "license": "MIT",
+  "description": "Shippable build request kick-starter",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shippable/reqKick.git"
+  },
+  "scripts": {
+    "lint": "jshint --exclude ./node_modules ."
+  },
+  "dependencies": {
+    "async": "2.5.0",
+    "dotenv": "4.0.0",
+    "node-uuid": "1.4.8",
+    "request": "2.83.0",
+    "underscore": "1.8.3",
+    "winston": "2.4.0"
+  },
+  "devDependencies": {
+    "jshint": "2.9.7"
+  },
+  "jshintConfig": {
+    "node": true,
+    "undef": true,
+    "noarg": true,
+    "white": true,
+    "esnext": true,
+    "strict": true,
+    "newcap": true,
+    "nonbsp": true,
+    "eqeqeq": true,
+    "unused": true,
+    "maxlen": 80,
+    "indent": 2,
+    "bitwise": true,
+    "noempty": true,
+    "latedef": "nofunc",
+    "maxdepth": 5,
+    "quotmark": "single",
+    "trailing": true,
+    "maxparams": 20,
+    "globalstrict": true,
+    "maxcomplexity": 20,
+    "maxstatements": 50,
+    "predef": ["logger"]
+  }
+}

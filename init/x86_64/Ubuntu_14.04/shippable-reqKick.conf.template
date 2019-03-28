@@ -1,0 +1,39 @@
+description "Shippable request kickstarter"
+
+start on filesystem
+
+respawn
+
+env STATUS_DIR="{{STATUS_DIR}}"
+env SCRIPTS_DIR="{{SCRIPTS_DIR}}"
+env REQEXEC_BIN_PATH="{{REQEXEC_BIN_PATH}}"
+env RUN_MODE="{{RUN_MODE}}"
+env NODE_ID="{{NODE_ID}}"
+env SUBSCRIPTION_ID="{{SUBSCRIPTION_ID}}"
+env NODE_TYPE_CODE="{{NODE_TYPE_CODE}}"
+env SHIPPABLE_NODE_ARCHITECTURE="{{SHIPPABLE_NODE_ARCHITECTURE}}"
+env SHIPPABLE_NODE_OPERATING_SYSTEM="{{SHIPPABLE_NODE_OPERATING_SYSTEM}}"
+env SHIPPABLE_API_URL="{{SHIPPABLE_API_URL}}"
+
+pre-start script
+  UUID={{UUID}}
+  if [ -z "$UUID" ]; then
+    REQKICK=/var/lib/shippable/reqKick/reqKick.app.js
+  else
+    REQKICK=/var/lib/shippable/$UUID/reqKick/reqKick.app.js
+  fi
+  if [ ! -f "$REQKICK" ]; then
+    echo "Shippable reqKick failed to start as $REQKICK is not present"
+    { stop; exit 0; }
+  fi
+end script
+
+script
+  UUID={{UUID}}
+  if [ -z "$UUID" ]; then
+    REQKICK=/var/lib/shippable/reqKick/reqKick.app.js
+  else
+    REQKICK=/var/lib/shippable/$UUID/reqKick/reqKick.app.js
+  fi
+  exec /usr/local/bin/node $REQKICK
+end script
