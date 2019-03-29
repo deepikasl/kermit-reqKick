@@ -4,7 +4,7 @@ Description=Shippable request kickstarter service
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/node /pipelines/reqKick/reqKick.app.js
-EnvironmentFile=/pipelines/config/reqKick-service.env
+EnvironmentFile=/pipelines/config/reqKick.env
 Restart=always
 
 [Install]
