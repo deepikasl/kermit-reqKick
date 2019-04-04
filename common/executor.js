@@ -8,7 +8,8 @@ var poller = require('./poller.js');
 var spawn = require('child_process').spawn;
 var util = require('util');
 var dotenv = require('dotenv');
-var ConsolesAdapter = require('./shippable/ConsolesAdapter.js');
+var StepletConsolesAdapter = require('./shippable/StepletConsolesAdapter.js');
+var ShippableAdapter = require('./shippable/APIAdapter.js');
 
 module.exports = function (callback) {
   var who = util.format('%s|common|%s', global.who, 'executor');
@@ -21,18 +22,22 @@ module.exports = function (callback) {
     skipStatusUpdate: false,
     statusPoll: null,
     who: who,
-    errors: []
+    errors: [],
+    error: false
   };
 
   async.series(
     [
-      _instantiateConsolesAdapter.bind(null, bag),
-      _readStepsPath.bind(null, bag),
-      _readScripts.bind(null, bag),
+      _readJobEnv.bind(null, bag),
+      _instantiateShippableAdapter.bind(null, bag),
+      _instantiateStepletConsolesAdapter.bind(null, bag),
+      _getSystemCodes.bind(null, bag),
+      _putStepletToProcessing.bind(null, bag),
       _pollStatus.bind(null, bag),
-      _executeSteps.bind(null, bag),
+      _executeScript.bind(null, bag),
       _getStatus.bind(null, bag),
       _setStatus.bind(null, bag),
+      _updateStepletStatus.bind(null, bag),
       _setExecutorAsReqProc.bind(null, bag),
       _pushErrorsToConsole.bind(null, bag)
     ],
@@ -51,93 +56,82 @@ module.exports = function (callback) {
   );
 };
 
-function _instantiateConsolesAdapter(bag, next) {
-  var who = bag.who + '|' + _instantiateConsolesAdapter.name;
+function _readJobEnv(bag, next) {
+  var who = bag.who + '|' + _readJobEnv.name;
   logger.verbose(who, 'Inside');
 
-  fs.readFile(global.config.jobENVPath, 'utf8',
+  fs.readFile(global.config.stepENVPath, 'utf8',
     function (err, data) {
       if (err) {
         logger.warn(who, 'Failed to read job ENVs: ', err);
       } else {
-        var envs = dotenv.parse(data);
-        bag.consolesAdapter = new ConsolesAdapter(
-          envs.SHIPPABLE_API_URL,
-          envs.BUILDER_API_TOKEN,
-          envs.BUILD_JOB_ID
-        );
+        bag.stepEnvs = dotenv.parse(data);
+        bag.stepletId = bag.stepEnvs.STEPLET_ID;
+        bag.executeScriptPath = bag.stepEnvs.SCRIPT_PATH;
+        return next(err);
       }
-
-      return next(err);
     }
   );
 }
 
-function _readStepsPath(bag, next) {
-  var who = bag.who + '|' + _readStepsPath.name;
+function _instantiateShippableAdapter(bag, next) {
+  var who = bag.who + '|' + _instantiateShippableAdapter.name;
   logger.verbose(who, 'Inside');
 
-  fs.readFile(global.config.jobStepsPath, 'utf8',
-    function (err, data) {
+  bag.shippableAdapter = new ShippableAdapter(bag.stepEnvs.SHIPPABLE_API_URL,
+    bag.stepEnvs.BUILDER_API_TOKEN);
+  return next();
+}
+
+function _instantiateStepletConsolesAdapter(bag, next) {
+  var who = bag.who + '|' + _instantiateStepletConsolesAdapter.name;
+  logger.verbose(who, 'Inside');
+
+  bag.consolesAdapter = new StepletConsolesAdapter(
+    bag.stepEnvs.SHIPPABLE_API_URL,
+    bag.stepEnvs.BUILDER_API_TOKEN,
+    bag.stepEnvs.STEPLET_ID
+  );
+  return next();
+}
+
+function _getSystemCodes(bag, next) {
+  var who = bag.who + '|' + _getSystemCodes.name;
+  logger.verbose(who, 'Inside');
+
+  bag.shippableAdapter.getSystemCodes(
+    function (err, systemCodes) {
       if (err) {
-        bag.exitCode = 1;
+        bag.error = true;
         bag.errors.push(util.format(
-          '%s: Failed to read file: %s with error: %s',
-            who, global.config.jobStepsPath, bag.exitCode
-          )
-        );
-        logger.error(
-          util.format('%s: Failed to read file: %s with error: %s',
-            who, global.config.jobStepsPath, bag.exitCode
-          )
-        );
+          '%s: Failed to get systemCodes with error: %s', who, bag.exitCode));
       } else {
-        bag.stepsFile = data;
+        bag.systemCodesByName = _.groupBy(systemCodes, 'name');
       }
+
       return next();
     }
   );
 }
 
-function _readScripts(bag, next) {
-  if (bag.exitCode) return next();
+function _putStepletToProcessing(bag, next) {
+  if (bag.error) return next();
 
-  var who = bag.who + '|' + _readScripts.name;
+  var who = bag.who + '|' + _putStepletToProcessing.name;
   logger.verbose(who, 'Inside');
 
-  fs.readFile(path.join(global.config.statusDir,bag.stepsFile), 'utf8',
-    function (err, data) {
+  var update = {
+    statusCode: bag.systemCodesByName['processing'].code
+  };
+  bag.shippableAdapter.putStepletById(bag.stepletId, update,
+    function (err) {
       if (err) {
-        bag.exitCode = 1;
-        bag.errors.push(
-          util.format('%s: Failed to read file: %s with error: %s',
-            who, bag.stepsFile, bag.exitCode
+        bag.error = true;
+        bag.errors.push(util.format(
+          '%s: Failed to update steplet: %s with error: %s', who, bag.stepletId,
+            err
           )
         );
-        logger.error(
-          util.format('%s: Failed to read file: %s with error: %s',
-            who, bag.stepsFile, bag.exitCode
-          )
-        );
-      } else {
-        try {
-          bag.reqKickSteps = JSON.parse(data).reqKick;
-          logger.verbose(
-            util.format('%s: Parsed file: %s successfully', who, bag.stepsFile)
-          );
-        } catch (err) {
-          bag.exitCode = 1;
-          bag.errors.push(
-            util.format('%s: Failed to parse JSON file: %s with error: %s',
-              who, bag.stepsFile, err
-            )
-          );
-          logger.error(
-            util.format('%s: Failed to parse JSON file: %s with error: %s',
-              who, bag.stepsFile, err
-            )
-          );
-        }
       }
       return next();
     }
@@ -145,13 +139,13 @@ function _readScripts(bag, next) {
 }
 
 function _pollStatus(bag, next) {
-  if (bag.exitCode) return next();
+  if (bag.error) return next();
 
   var who = bag.who + '|' + _pollStatus.name;
   logger.verbose(who, 'Inside');
 
   var pollerOpts = {
-    filePath: global.config.jobStatusPath,
+    filePath: global.config.stepStatusPath,
     intervalMS: global.config.pollIntervalMS,
     content: ['cancelled', 'timeout']
   };
@@ -160,7 +154,7 @@ function _pollStatus(bag, next) {
     function (err, statusPoll) {
       bag.statusPoll = statusPoll;
       if (err) {
-        bag.exitCode = 1;
+        bag.error = true;
         bag.errors.push(
           util.format('%s: Failed to status poller with error: %s', who, err)
         );
@@ -202,59 +196,48 @@ function _pollStatus(bag, next) {
   );
 }
 
-function _executeSteps(bag, next) {
-  if (bag.exitCode) return next();
+function _executeScript(bag, next) {
+  if (bag.error) return next();
 
-  var who = bag.who + '|' + _executeSteps.name;
+  var who = bag.who + '|' + _executeScript.name;
   logger.verbose(who, 'Inside');
 
-  async.eachSeries(
-    bag.reqKickSteps,
-    function (step, nextStep) {
-      var taskScriptName = step.taskScript;
-      bag.killScriptName = step.killScript || null;
-      bag.currentProcess = spawn(global.config.reqExecBinPath, [
-        path.join(global.config.scriptsDir, taskScriptName),
-        global.config.jobENVPath
-      ]);
+  var executeScriptPath = bag.executeScriptPath;
+  bag.killScriptName = bag.killScript || null;
+  bag.currentProcess = spawn(global.config.reqExecBinPath, [
+    executeScriptPath, global.config.stepENVPath
+  ]);
 
-      var stdoutMsg = [];
-      bag.currentProcess.stdout.on('data',
-        function (data) {
-          stdoutMsg.push(util.format('%s: failed to execute steps: %s',
-              who, data.toString()
-            )
-          );
-        }
+  var stdoutMsg = [];
+  bag.currentProcess.stdout.on('data',
+    function (data) {
+      stdoutMsg.push(util.format('%s: failed to execute steps: %s',
+          who, data.toString()
+        )
       );
+    }
+  );
 
-      bag.currentProcess.stderr.on('data',
-        function (data) {
-          bag.errors.push(util.format('%s: failed to execute steps: %s',
-              who, data.toString()
-            )
-          );
-        }
+  bag.currentProcess.stderr.on('data',
+    function (data) {
+      bag.errors.push(util.format('%s: failed to execute steps: %s',
+          who, data.toString()
+        )
       );
+    }
+  );
 
-      bag.currentProcess.on('exit',
-        function (exitCode, signal) {
-          bag.currentProcess = null;
-          if (exitCode || signal)
-            bag.errors = bag.errors.concat(stdoutMsg);
-          logger.verbose(util.format('%s: Script %s exited with exit code: ' +
-            '%s and signal: %s', who, taskScriptName, exitCode, signal)
-          );
-          return nextStep(exitCode || signal);
-        }
-      );
-    },
-    function (err) {
-      // The task has completed at this point, we don't want the status poller
-      // to run anymore.
+  bag.currentProcess.on('exit',
+    function (exitCode, signal) {
       bag.statusPoll.stop();
-      if (err)
-        bag.exitCode = 1;
+      bag.currentProcess = null;
+      if (exitCode || signal) {
+        bag.errors = bag.errors.concat(stdoutMsg);
+        bag.exitCode = exitCode || signal;
+      }
+      logger.verbose(util.format('%s: Script %s exited with exit code: ' +
+        '%s and signal: %s', who, executeScriptPath, exitCode, signal)
+      );
       return next();
     }
   );
@@ -264,30 +247,35 @@ function _getStatus(bag, next) {
   var who = bag.who + '|' + _getStatus.name;
   logger.verbose(who, 'Inside');
 
-  fs.readFile(global.config.jobStatusPath, 'utf8',
+  fs.readFile(global.config.stepStatusPath, 'utf8',
     function (err, data) {
       if (err) {
         bag.errors.push(
           util.format('%s: Failed to get status file: %s with error: %s',
-            who, global.config.jobStatusPath, err
+            who, global.config.stepStatusPath, err
           )
         );
         logger.verbose(
           util.format('%s: Failed to get status file: %s with error: %s',
-            who, global.config.jobStatusPath, err
+            who, global.config.stepStatusPath, err
           )
         );
       } else {
         logger.verbose(
           util.format('%s: Found status file: %s with content %s',
-            who, global.config.jobStatusPath, JSON.stringify(data)
+            who, global.config.stepStatusPath, JSON.stringify(data)
           )
         );
 
         // If a status has already been set due to cancel/timeout, skip
         // status update.
-        if (!_.isEmpty(data))
+        if (!_.isEmpty(data)) {
           bag.skipStatusUpdate = true;
+        } else {
+          bag.statusName = bag.exitCode ? 'failure' : 'success';
+          if (bag.error)
+            bag.statusName = 'error';
+        }
       }
       return next();
     }
@@ -300,27 +288,48 @@ function _setStatus(bag, next) {
   var who = bag.who + '|' + _setStatus.name;
   logger.verbose(who, 'Inside');
 
-  var errorCode = bag.exitCode ? 'failure' : 'success';
-  fs.writeFile(global.config.jobStatusPath, errorCode,
+  fs.writeFile(global.config.stepStatusPath, bag.statusName,
     function (err) {
       if (err) {
         bag.errors.push(
           util.format('%s: Failed to set status file: %s with error: %s',
-            who, global.config.jobStatusPath, err
+            who, global.config.stepStatusPath, err
           )
         );
         logger.verbose(
           util.format('%s: Failed to set status file: %s with error: %s',
-            who, global.config.jobStatusPath, err
+            who, global.config.stepStatusPath, err
           )
         );
       } else {
         logger.verbose(
           util.format('%s: Updated status file: %s with content %s',
-            who, global.config.jobStatusPath, errorCode
+            who, global.config.stepStatusPath, bag.statusName
           )
         );
       }
+      return next();
+    }
+  );
+}
+
+function _updateStepletStatus(bag, next) {
+  if (bag.skipStatusUpdate) return next();
+
+  var who = bag.who + '|' + _updateStepletStatus.name;
+  logger.verbose(who, 'Inside');
+
+  var update = {
+    statusCode: bag.systemCodesByName[bag.statusName].code
+  };
+  bag.shippableAdapter.putStepletById(bag.stepletId, update,
+    function (err) {
+      if (err)
+        bag.errors.push(util.format(
+          '%s: Failed to update steplet: %s with error: %s', who, bag.stepletId,
+            err
+          )
+        );
       return next();
     }
   );
@@ -331,23 +340,23 @@ function _setExecutorAsReqProc(bag, next) {
   logger.verbose(who, 'Inside');
 
   var content = 'reqProc\n';
-  fs.writeFile(global.config.jobWhoPath, content,
+  fs.writeFile(global.config.stepWhoPath, content,
     function (err) {
       if (err) {
         bag.error.push(
           util.format('%s: Failed to set executor file: %s with err %s',
-            who, global.config.jobWhoPath, err
+            who, global.config.stepWhoPath, err
           )
         );
         logger.error(
           util.format('%s: Failed to set executor file: %s with err %s',
-            who, global.config.jobWhoPath, err
+            who, global.config.stepWhoPath, err
           )
         );
       } else {
         logger.verbose(
           util.format('%s: Updated executor file: %s with content: %s',
-            who, global.config.jobWhoPath, JSON.stringify(content)
+            who, global.config.stepWhoPath, JSON.stringify(content)
           )
         );
       }
@@ -378,7 +387,7 @@ function __executeKillScript(killScriptName, done) {
 
   var killProcess = spawn(global.config.reqExecBinPath, [
     path.join(global.config.scriptsDir, killScriptName),
-    global.config.jobENVPath
+    global.config.stepENVPath
   ]);
 
   killProcess.on('exit',

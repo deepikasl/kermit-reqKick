@@ -1,14 +1,14 @@
 'use strict';
 
-var self = Adapter;
+var self = StepletConsolesAdapter;
 module.exports = self;
 
+var _ = require('underscore');
 var uuid = require('node-uuid');
 var util = require('util');
 var ShippableAdapter = require('./APIAdapter.js');
 
-function Adapter(apiToken, stepletId, jobConsoleBatchSize,
-  jobConsoleBufferTimeInterval) {
+function StepletConsolesAdapter(apiUrl, apiToken, stepletId) {
   this.who = util.format(
     '%s|common|shippable|ConsolesAdapter|stepletId:%s', global.who,
     stepletId);
@@ -18,24 +18,18 @@ function Adapter(apiToken, stepletId, jobConsoleBatchSize,
   var processStartTime = process.hrtime();
   this.processStartTimeInMicroSec =
     processStartTime[0] * 1e6 + processStartTime[1] / 1e3;
-  this.ShippableAdapter = new ShippableAdapter(apiToken);
-  this.batchSize = jobConsoleBatchSize || 20;
+  this.ShippableAdapter = new ShippableAdapter(apiUrl, apiToken);
+  this.batchSize = 20;
   this.buffer = [];
-  this.bufferTimeInterval = jobConsoleBufferTimeInterval || 3000;
+  this.bufferTimeInterval = 3000;
   this.bufferTimer = null;
   this.pendingApiCalls = 0;
 }
 
-Adapter.prototype.openGrp = function (consoleGrpName) {
+StepletConsolesAdapter.prototype.openGrp = function (consoleGrpName) {
   var that = this;
-  var who = that.who + '|_openGrp';
-
   that.consoleGrpName = consoleGrpName;
   that.consoleGrpId = uuid.v4();
-
-  if (_.isEmpty(consoleGrpName))
-    throw new ActErr(who, ActErr.ParamNotFound,
-      'Missing param :consoleGrpName');
 
   var consoleGrp = {
     stepletId: that.stepletId,
@@ -51,7 +45,7 @@ Adapter.prototype.openGrp = function (consoleGrpName) {
   that._postToStepConsole(true);
 };
 
-Adapter.prototype.closeGrp = function (isSuccess) {
+StepletConsolesAdapter.prototype.closeGrp = function (isSuccess) {
   var that = this;
 
   //The grp is already closed
@@ -80,14 +74,8 @@ Adapter.prototype.closeGrp = function (isSuccess) {
   that.consoleGrpId = null;
 };
 
-Adapter.prototype.openCmd = function (consoleCmdName) {
+StepletConsolesAdapter.prototype.openCmd = function (consoleCmdName) {
   var that = this;
-  var who = that.who + '|_openCmd';
-
-  if (_.isEmpty(consoleCmdName))
-    throw new ActErr(who, ActErr.ParamNotFound,
-      'Missing param :consoleCmdName');
-
   that.consoleCmdName = consoleCmdName;
   that.consoleCmdId = uuid.v4();
 
@@ -105,7 +93,7 @@ Adapter.prototype.openCmd = function (consoleCmdName) {
   that._postToStepConsole(true);
 };
 
-Adapter.prototype.closeCmd = function (isSuccess) {
+StepletConsolesAdapter.prototype.closeCmd = function (isSuccess) {
   var that = this;
 
   //The cmd is already closed
@@ -132,7 +120,7 @@ Adapter.prototype.closeCmd = function (isSuccess) {
   that.consoleCmdId = null;
 };
 
-Adapter.prototype.publishMsg = function (message) {
+StepletConsolesAdapter.prototype.publishMsg = function (message) {
   var that = this;
 
   var consoleGrp = {
@@ -149,7 +137,7 @@ Adapter.prototype.publishMsg = function (message) {
   that._postToStepConsole(false);
 };
 
-Adapter.prototype._postToStepConsole = function (forced) {
+StepletConsolesAdapter.prototype._postToStepConsole = function (forced) {
   var that = this;
   var who = that.who + '|_postToStepConsole';
 
@@ -171,7 +159,7 @@ Adapter.prototype._postToStepConsole = function (forced) {
     };
 
     that.pendingApiCalls ++;
-    that.ShippableAdapter.postStepConsoles(body,
+    that.ShippableStepletConsolesAdapter.postStepConsoles(body,
       function (err) {
         that.pendingApiCalls --;
         if (err)
@@ -189,12 +177,12 @@ Adapter.prototype._postToStepConsole = function (forced) {
   }
 };
 
-Adapter.prototype.getPendingApiCallCount = function() {
+StepletConsolesAdapter.prototype.getPendingApiCallCount = function() {
   var that = this;
   return that.pendingApiCalls;
 };
 
-Adapter.prototype._getTimestamp = function () {
+StepletConsolesAdapter.prototype._getTimestamp = function () {
   var that = this;
   var currentProcessTime = process.hrtime();
 
