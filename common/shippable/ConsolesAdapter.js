@@ -1,23 +1,24 @@
 'use strict';
 
-var self = ConsolesAdapter;
+var self = Adapter;
 module.exports = self;
 
-var _ = require('underscore');
-var util = require('util');
 var uuid = require('node-uuid');
-var APIAdapter = require('./APIAdapter.js');
+var util = require('util');
+var ShippableAdapter = require('./APIAdapter.js');
 
-function ConsolesAdapter(apiUrl, apiToken, buildJobId, jobConsoleBatchSize,
+function Adapter(apiToken, stepletId, jobConsoleBatchSize,
   jobConsoleBufferTimeInterval) {
-  this.who = util.format('%s|ConsolesAdapter|jobId:%s', global.who, buildJobId);
-  this.buildJobId = buildJobId;
+  this.who = util.format(
+    '%s|common|shippable|ConsolesAdapter|stepletId:%s', global.who,
+    stepletId);
+  this.stepletId = stepletId;
 
   this.startTimeInMicroSec = new Date().getTime() * 1000;
   var processStartTime = process.hrtime();
   this.processStartTimeInMicroSec =
     processStartTime[0] * 1e6 + processStartTime[1] / 1e3;
-  this.APIAdapter = new APIAdapter(apiUrl, apiToken);
+  this.ShippableAdapter = new ShippableAdapter(apiToken);
   this.batchSize = jobConsoleBatchSize || 20;
   this.buffer = [];
   this.bufferTimeInterval = jobConsoleBufferTimeInterval || 3000;
@@ -25,13 +26,19 @@ function ConsolesAdapter(apiUrl, apiToken, buildJobId, jobConsoleBatchSize,
   this.pendingApiCalls = 0;
 }
 
-ConsolesAdapter.prototype.openGrp = function (consoleGrpName) {
+Adapter.prototype.openGrp = function (consoleGrpName) {
   var that = this;
+  var who = that.who + '|_openGrp';
+
   that.consoleGrpName = consoleGrpName;
   that.consoleGrpId = uuid.v4();
 
+  if (_.isEmpty(consoleGrpName))
+    throw new ActErr(who, ActErr.ParamNotFound,
+      'Missing param :consoleGrpName');
+
   var consoleGrp = {
-    buildJobId: that.buildJobId,
+    stepletId: that.stepletId,
     consoleId: that.consoleGrpId,
     parentConsoleId: 'root',
     type: 'grp',
@@ -41,12 +48,13 @@ ConsolesAdapter.prototype.openGrp = function (consoleGrpName) {
   };
 
   that.buffer.push(consoleGrp);
-  that._postToBuildJobConsole(true);
+  that._postToStepConsole(true);
 };
 
-ConsolesAdapter.prototype.closeGrp = function (isSuccess) {
+Adapter.prototype.closeGrp = function (isSuccess) {
   var that = this;
-  // The grp is already closed
+
+  //The grp is already closed
   if (!that.consoleGrpName)
     return;
 
@@ -55,7 +63,7 @@ ConsolesAdapter.prototype.closeGrp = function (isSuccess) {
   that.closeCmd();
 
   var consoleGrp = {
-    buildJobId: that.buildJobId,
+    stepletId: that.stepletId,
     consoleId: that.consoleGrpId,
     parentConsoleId: 'root',
     type: 'grp',
@@ -67,19 +75,24 @@ ConsolesAdapter.prototype.closeGrp = function (isSuccess) {
   };
 
   that.buffer.push(consoleGrp);
-  that._postToBuildJobConsole(true);
+  that._postToStepConsole(true);
   that.consoleGrpName = null;
   that.consoleGrpId = null;
 };
 
-ConsolesAdapter.prototype.openCmd = function (consoleCmdName) {
+Adapter.prototype.openCmd = function (consoleCmdName) {
   var that = this;
+  var who = that.who + '|_openCmd';
+
+  if (_.isEmpty(consoleCmdName))
+    throw new ActErr(who, ActErr.ParamNotFound,
+      'Missing param :consoleCmdName');
 
   that.consoleCmdName = consoleCmdName;
   that.consoleCmdId = uuid.v4();
 
   var consoleGrp = {
-    buildJobId: that.buildJobId,
+    stepletId: that.stepletId,
     consoleId: that.consoleCmdId,
     parentConsoleId: that.consoleGrpId,
     type: 'cmd',
@@ -89,10 +102,10 @@ ConsolesAdapter.prototype.openCmd = function (consoleCmdName) {
   };
 
   that.buffer.push(consoleGrp);
-  that._postToBuildJobConsole(true);
+  that._postToStepConsole(true);
 };
 
-ConsolesAdapter.prototype.closeCmd = function (isSuccess) {
+Adapter.prototype.closeCmd = function (isSuccess) {
   var that = this;
 
   //The cmd is already closed
@@ -102,7 +115,7 @@ ConsolesAdapter.prototype.closeCmd = function (isSuccess) {
   if (!_.isBoolean(isSuccess)) isSuccess = true;
 
   var consoleGrp = {
-    buildJobId: that.buildJobId,
+    stepletId: that.stepletId,
     consoleId: that.consoleCmdId,
     parentConsoleId: that.consoleGrpId,
     type: 'cmd',
@@ -114,16 +127,16 @@ ConsolesAdapter.prototype.closeCmd = function (isSuccess) {
   };
 
   that.buffer.push(consoleGrp);
-  that._postToBuildJobConsole(true);
+  that._postToStepConsole(true);
   that.consoleCmdName = null;
   that.consoleCmdId = null;
 };
 
-ConsolesAdapter.prototype.publishMsg = function (message) {
+Adapter.prototype.publishMsg = function (message) {
   var that = this;
 
   var consoleGrp = {
-    buildJobId: that.buildJobId,
+    stepletId: that.stepletId,
     consoleId: uuid.v4(),
     parentConsoleId: that.consoleCmdId,
     type: 'msg',
@@ -133,12 +146,12 @@ ConsolesAdapter.prototype.publishMsg = function (message) {
   };
 
   that.buffer.push(consoleGrp);
-  that._postToBuildJobConsole(false);
+  that._postToStepConsole(false);
 };
 
-ConsolesAdapter.prototype._postToBuildJobConsole = function (forced) {
+Adapter.prototype._postToStepConsole = function (forced) {
   var that = this;
-  var who = that.who + '|_postToBuildJobConsole';
+  var who = that.who + '|_postToStepConsole';
 
   if (that.buffer.length > that.batchSize || forced) {
     if (that.bufferTimer) {
@@ -153,16 +166,16 @@ ConsolesAdapter.prototype._postToBuildJobConsole = function (forced) {
       return;
 
     var body = {
-      buildJobId: that.buildJobId,
-      buildJobConsoles: consoles
+      stepletId: that.stepletId,
+      stepConsoles: consoles
     };
 
     that.pendingApiCalls ++;
-    that.APIAdapter.postBuildJobConsoles(body,
+    that.ShippableAdapter.postStepConsoles(body,
       function (err) {
         that.pendingApiCalls --;
         if (err)
-          logger.error(who, 'postBuildJobConsoles Failed', err);
+          logger.error(who, 'postStepConsoles Failed', err);
         logger.debug(who, 'Succeeded');
       }
     );
@@ -170,18 +183,18 @@ ConsolesAdapter.prototype._postToBuildJobConsole = function (forced) {
     // Set a timeout that will clear the buffer in three seconds if nothing has.
     that.bufferTimer = setTimeout(
       function () {
-        this._postToBuildJobConsole(true);
+        this._postToStepConsole(true);
       }.bind(that),
       that.bufferTimeInterval);
   }
 };
 
-ConsolesAdapter.prototype.getPendingApiCallCount = function() {
+Adapter.prototype.getPendingApiCallCount = function() {
   var that = this;
   return that.pendingApiCalls;
 };
 
-ConsolesAdapter.prototype._getTimestamp = function () {
+Adapter.prototype._getTimestamp = function () {
   var that = this;
   var currentProcessTime = process.hrtime();
 
