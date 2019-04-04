@@ -29,8 +29,8 @@ function checkENVs() {
   logger.info(who, 'Inside');
 
   var expectedENVs = ['STATUS_DIR', 'SCRIPTS_DIR', 'REQEXEC_BIN_PATH',
-  'NODE_ID', 'NODE_TYPE_CODE', 'SHIPPABLE_NODE_ARCHITECTURE',
-  'SHIPPABLE_NODE_OPERATING_SYSTEM', 'SHIPPABLE_API_URL'];
+    'NODE_ID', 'NODE_TYPE_CODE', 'SHIPPABLE_NODE_ARCHITECTURE',
+    'SHIPPABLE_NODE_OPERATING_SYSTEM', 'SHIPPABLE_API_URL'];
 
   var errors = [];
   _.each(expectedENVs,
@@ -61,24 +61,19 @@ function setupConfig() {
     scriptsDir: process.env.SCRIPTS_DIR,
     reqExecBinPath: process.env.REQEXEC_BIN_PATH,
     nodeId: process.env.NODE_ID,
-    subscriptionId: process.env.SUBSCRIPTION_ID,
+    projectId: process.env.PROJECT_ID,
     nodeTypeCode: parseInt(process.env.NODE_TYPE_CODE, 10) || 7001,
     shippableNodeArchitecture: process.env.SHIPPABLE_NODE_ARCHITECTURE,
     shippableNodeOperatingSystem: process.env.SHIPPABLE_NODE_OPERATING_SYSTEM,
     pollIntervalMS: 5000
   };
 
-  global.config.jobWhoPath = path.join(global.config.statusDir, 'job.who');
-  global.config.jobStatusPath = path.join(
+  global.config.stepWhoPath = path.join(global.config.statusDir, 'step.who');
+  global.config.stepStatusPath = path.join(
     global.config.statusDir,
-    'job.status'
+    'step.status'
   );
-  global.config.jobENVPath = path.join(global.config.statusDir, 'job.env');
-  global.config.jobStepsPath = path.join(
-    global.config.statusDir,
-    'job.steps.path'
-  );
-
+  global.config.stepENVPath = path.join(global.config.statusDir, 'step.env');
   global.config.apiUrl = process.env.SHIPPABLE_API_URL;
 
   if (global.config.shippableNodeOperatingSystem === 'WindowsServer_2016') {
