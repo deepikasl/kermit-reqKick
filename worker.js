@@ -9,7 +9,7 @@ module.exports = function () {
   logger.info(who, 'Inside');
 
   var pollerOpts = {
-    filePath: global.config.jobWhoPath,
+    filePath: global.config.stepWhoPath,
     intervalMS: global.config.pollIntervalMS,
     content: 'reqKick'
   };

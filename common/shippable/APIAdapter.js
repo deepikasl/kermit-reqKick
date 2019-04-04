@@ -14,13 +14,24 @@ function ShippableAdapter(apiUrl, apiToken) {
   };
 }
 
-ShippableAdapter.prototype.postBuildJobConsoles =
-  function (json, callback) {
-    this.post(
-      util.format('/buildJobConsoles'),
-      json,
+ShippableAdapter.prototype.getSystemCodes =
+  function (callback) {
+    this.get(
+      '/systemCodes',
       callback
     );
+  };
+
+// stepletConsoles
+// TODO: Make use of the actual API here, when it is available
+ShippableAdapter.prototype.postStepletConsoles =
+  function (json, callback) {
+    // this.post(
+    //   util.format('/stepletConsoles'),
+    //   json,
+    //   callback
+    // );
+    callback(null, {});
   };
 
 ShippableAdapter.prototype.postClusterNodeStats =
@@ -41,11 +52,66 @@ ShippableAdapter.prototype.postSystemNodeStats =
     );
   };
 
+// steplets
+// TODO: Make use of the actual API here, when it is available
+ShippableAdapter.prototype.putStepletById =
+  function (id, json, callback) {
+    // this.put(
+    //   util.format('/steplets/%s', id),
+    //   json,
+    //   callback
+    // );
+    callback(null, {});
+  };
+
+ShippableAdapter.prototype.get =
+  function (relativeUrl, callback) {
+    var bag = {};
+    bag.opts = {
+      method: 'GET',
+      url: this.baseUrl.concat(relativeUrl),
+      headers: this.headers
+    };
+    bag.who = util.format('%s call to %s', bag.opts.method, bag.opts.url);
+    logger.debug(util.format('Starting %s', bag.who));
+
+    async.series([
+        _performCall.bind(null, bag),
+        _parseBody.bind(null, bag)
+      ],
+      function () {
+        callback(bag.err, bag.parsedBody, bag.res);
+      }
+    );
+  };
+
 ShippableAdapter.prototype.post =
   function (relativeUrl, json, callback) {
     var bag = {};
     bag.opts = {
       method: 'POST',
+      url: this.baseUrl.concat(relativeUrl),
+      headers: this.headers,
+      json: json
+    };
+    bag.who = util.format('%s call to %s', bag.opts.method, bag.opts.url);
+    logger.debug(util.format('Starting %s', bag.who));
+
+    async.series([
+        _performCall.bind(null, bag),
+        _parseBody.bind(null, bag)
+      ],
+      function () {
+        callback(bag.err, bag.parsedBody, bag.res);
+      }
+    );
+  };
+
+ShippableAdapter.prototype.put =
+  function (relativeUrl, json, callback) {
+    var bag = {};
+    bag.opts = {
+      method: 'PUT',
       url: this.baseUrl.concat(relativeUrl),
       headers: this.headers,
       json: json

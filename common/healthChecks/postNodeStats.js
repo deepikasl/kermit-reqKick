@@ -225,7 +225,7 @@ function __postClusterNodeStat(bag, done) {
   logger.debug(who, 'Inside');
 
   var clusterNodeStat = {
-    subscriptionId: global.config.subscriptionId,
+    projectId: global.config.projectId,
     activeContainersCount: bag.activeContainersCount,
     totalContainersCount: bag.totalContainersCount,
     imageCount: bag.imageCount,
