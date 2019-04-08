@@ -159,7 +159,7 @@ StepletConsolesAdapter.prototype._postToStepConsole = function (forced) {
     };
 
     that.pendingApiCalls ++;
-    that.ShippableStepletConsolesAdapter.postStepletConsoles(body,
+    that.ShippableAdapter.postStepletConsoles(body,
       function (err) {
         that.pendingApiCalls --;
         if (err)

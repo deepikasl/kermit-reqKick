@@ -106,7 +106,7 @@ function _getSystemCodes(bag, next) {
         bag.errors.push(util.format(
           '%s: Failed to get systemCodes with error: %s', who, bag.exitCode));
       } else {
-        bag.systemCodesByName = _.groupBy(systemCodes, 'name');
+        bag.systemCodesByName = _.indexBy(systemCodes, 'name');
       }
 
       return next();
