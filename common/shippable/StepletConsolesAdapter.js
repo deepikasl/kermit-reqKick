@@ -159,11 +159,11 @@ StepletConsolesAdapter.prototype._postToStepConsole = function (forced) {
     };
 
     that.pendingApiCalls ++;
-    that.ShippableStepletConsolesAdapter.postStepConsoles(body,
+    that.ShippableStepletConsolesAdapter.postStepletConsoles(body,
       function (err) {
         that.pendingApiCalls --;
         if (err)
-          logger.error(who, 'postStepConsoles Failed', err);
+          logger.error(who, 'postStepletConsoles Failed', err);
         logger.debug(who, 'Succeeded');
       }
     );
@@ -186,7 +186,7 @@ StepletConsolesAdapter.prototype._getTimestamp = function () {
   var that = this;
   var currentProcessTime = process.hrtime();
 
-  return that.startTimeInMicroSec +
+  return Math.round(that.startTimeInMicroSec +
     (currentProcessTime[0] * 1e6 + currentProcessTime[1]/1e3) -
-      that.processStartTimeInMicroSec;
+      that.processStartTimeInMicroSec);
 };

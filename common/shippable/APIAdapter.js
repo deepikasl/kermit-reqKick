@@ -22,16 +22,13 @@ ShippableAdapter.prototype.getSystemCodes =
     );
   };
 
-// stepletConsoles
-// TODO: Make use of the actual API here, when it is available
 ShippableAdapter.prototype.postStepletConsoles =
   function (json, callback) {
-    // this.post(
-    //   util.format('/stepletConsoles'),
-    //   json,
-    //   callback
-    // );
-    callback(null, {});
+    this.post(
+      util.format('/stepletConsoles'),
+      json,
+      callback
+    );
   };
 
 ShippableAdapter.prototype.postClusterNodeStats =
@@ -52,16 +49,13 @@ ShippableAdapter.prototype.postSystemNodeStats =
     );
   };
 
-// steplets
-// TODO: Make use of the actual API here, when it is available
 ShippableAdapter.prototype.putStepletById =
   function (id, json, callback) {
-    // this.put(
-    //   util.format('/steplets/%s', id),
-    //   json,
-    //   callback
-    // );
-    callback(null, {});
+    this.put(
+      util.format('/steplets/%s', id),
+      json,
+      callback
+    );
   };
 
 ShippableAdapter.prototype.get =
