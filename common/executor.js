@@ -121,7 +121,8 @@ function _putStepletToProcessing(bag, next) {
   logger.verbose(who, 'Inside');
 
   var update = {
-    statusCode: bag.systemCodesByName['processing'].code
+    statusCode: bag.systemCodesByName['processing'].code,
+    startedAt: new Date()
   };
   bag.shippableAdapter.putStepletById(bag.stepletId, update,
     function (err) {
@@ -320,7 +321,8 @@ function _updateStepletStatus(bag, next) {
   logger.verbose(who, 'Inside');
 
   var update = {
-    statusCode: bag.systemCodesByName[bag.statusName].code
+    statusCode: bag.systemCodesByName[bag.statusName].code,
+    endedAt: new Date()
   };
   bag.shippableAdapter.putStepletById(bag.stepletId, update,
     function (err) {
