@@ -273,9 +273,14 @@ function _getStatus(bag, next) {
         if (!_.isEmpty(data)) {
           bag.skipStatusUpdate = true;
         } else {
-          bag.statusName = bag.exitCode ? 'failure' : 'success';
           if (bag.error)
             bag.statusName = 'error';
+          else if (bag.exitCode === 0)
+            bag.statusName = 'success';
+          else if (bag.exitCode === 199)
+            bag.statusName = 'error';
+          else
+            bag.statusName = 'failure';
         }
       }
       return next();
