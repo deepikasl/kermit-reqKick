@@ -14,7 +14,7 @@ function setupGlobals() {
   // default log level is warn
   var logLevel = 'warn';
 
-  if (runMode === 'dev')
+  if (runMode === 'devmode')
     logLevel = 'debug';
   else if (runMode === 'beta')
     logLevel = 'verbose';
