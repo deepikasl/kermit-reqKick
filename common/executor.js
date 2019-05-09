@@ -68,6 +68,7 @@ function _readJobEnv(bag, next) {
         bag.stepEnvs = dotenv.parse(data);
         bag.stepletId = bag.stepEnvs.STEPLET_ID;
         bag.executeScriptPath = bag.stepEnvs.SCRIPT_PATH;
+        bag.stepDockerContainerName = bag.stepEnvs.STEP_DOCKER_CONTAINER_NAME;
         return next(err);
       }
     }
@@ -170,12 +171,12 @@ function _pollStatus(bag, next) {
           bag.consolesAdapter.openGrp(msg);
           bag.consolesAdapter.closeGrp(true);
           if (bag.currentProcess) {
-            __executeKillScript(bag.killScriptName,
+            __executeKillScript(bag.killScriptPath, ['step-' + bag.stepletId],
               function (err) {
                 if (err) {
                   logger.warn(
                     util.format('%s: Failed to execute container kill script ' +
-                    ':  %s with error code: %s', who, bag.killScriptName, err)
+                    ':  %s with error code: %s', who, bag.killScriptPath, err)
                   );
                 } else {
                   try {
@@ -204,7 +205,8 @@ function _executeScript(bag, next) {
   logger.verbose(who, 'Inside');
 
   var executeScriptPath = bag.executeScriptPath;
-  bag.killScriptName = bag.killScript || null;
+  bag.killScriptPath = path.join(__dirname, 'scripts', 'killContainer.' +
+    global.config.scriptExtension);
   bag.currentProcess = spawn(global.config.reqExecBinPath, [
     executeScriptPath, global.config.stepENVPath
   ]);
@@ -389,13 +391,9 @@ function _pushErrorsToConsole(bag, next) {
   return next();
 }
 
-function __executeKillScript(killScriptName, done) {
-  if (_.isEmpty(killScriptName)) return done();
-
-  var killProcess = spawn(global.config.reqExecBinPath, [
-    path.join(global.config.scriptsDir, killScriptName),
-    global.config.stepENVPath
-  ]);
+function __executeKillScript(killScriptPath, args, done) {
+  if (_.isEmpty(killScriptPath)) return done();
+  var killProcess = spawn(killScriptPath, args);
 
   killProcess.on('exit',
     function (exitCode, signal) {
