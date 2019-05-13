@@ -3,8 +3,8 @@ Description=Shippable request kickstarter service
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/node /var/lib/shippable/%i/reqKick/reqKick.app.js
-EnvironmentFile=/etc/shippable/reqKick/%i.env
+ExecStart=/usr/local/bin/node /jfrog/reqKick/reqKick.app.js
+EnvironmentFile=/jfrog/config/reqKick.env
 Restart=always
 
 [Install]
