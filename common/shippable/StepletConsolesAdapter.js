@@ -8,11 +8,12 @@ var uuid = require('node-uuid');
 var util = require('util');
 var ShippableAdapter = require('./APIAdapter.js');
 
-function StepletConsolesAdapter(apiUrl, apiToken, stepletId) {
+function StepletConsolesAdapter(apiUrl, apiToken, stepletId, pipelineId) {
   this.who = util.format(
     '%s|common|shippable|ConsolesAdapter|stepletId:%s', global.who,
     stepletId);
   this.stepletId = stepletId;
+  this.pipelineId = pipelineId;
 
   this.startTimeInMicroSec = new Date().getTime() * 1000;
   var processStartTime = process.hrtime();
@@ -155,6 +156,7 @@ StepletConsolesAdapter.prototype._postToStepConsole = function (forced) {
 
     var body = {
       stepletId: that.stepletId,
+      pipelineId: that.pipelineId,
       stepConsoles: consoles
     };
 
