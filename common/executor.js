@@ -67,6 +67,7 @@ function _readJobEnv(bag, next) {
       } else {
         bag.stepEnvs = dotenv.parse(data);
         bag.stepletId = bag.stepEnvs.STEPLET_ID;
+        bag.pipelineId = bag.stepEnvs.PIPELINE_ID;
         bag.executeScriptPath = bag.stepEnvs.SCRIPT_PATH;
         bag.stepDockerContainerName = bag.stepEnvs.STEP_DOCKER_CONTAINER_NAME;
         return next(err);
@@ -91,7 +92,8 @@ function _instantiateStepletConsolesAdapter(bag, next) {
   bag.consolesAdapter = new StepletConsolesAdapter(
     bag.stepEnvs.SHIPPABLE_API_URL,
     bag.stepEnvs.BUILDER_API_TOKEN,
-    bag.stepEnvs.STEPLET_ID
+    bag.stepEnvs.STEPLET_ID,
+    bag.stepEnvs.PIPELINE_ID
   );
   return next();
 }
