@@ -124,7 +124,7 @@ function _putStepletToProcessing(bag, next) {
   logger.verbose(who, 'Inside');
 
   var update = {
-    statusCode: bag.systemCodesByName['processing'].code,
+    statusCode: bag.systemCodesByName.processing.code,
     startedAt: new Date()
   };
   bag.shippableAdapter.putStepletById(bag.stepletId, update,
@@ -151,7 +151,7 @@ function _pollStatus(bag, next) {
   var pollerOpts = {
     filePath: global.config.stepStatusPath,
     intervalMS: global.config.pollIntervalMS,
-    content: ['cancelled', 'timeout']
+    content: ['cancelling', 'timingOut']
   };
 
   poller(pollerOpts,
@@ -272,7 +272,7 @@ function _getStatus(bag, next) {
           )
         );
 
-        // If a status has already been set due to cancel/timeout, skip
+        // If a status has already been set due to cancelling/timingOut, skip
         // status update.
         if (!_.isEmpty(data)) {
           bag.skipStatusUpdate = true;
