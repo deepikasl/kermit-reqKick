@@ -85,14 +85,6 @@ function setupConfig() {
     global.config.defaultShell = '/bin/bash';
     global.config.defaultShellArgs = ['-c'];
   }
-
-  /* Node Type Codes */
-  global.nodeTypeCodes = {
-    dynamic: 7000,
-    custom: 7001,
-    system: 7002,
-    service: 7003
-  };
 }
 
 function reqKick() {
