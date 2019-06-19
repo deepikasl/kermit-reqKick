@@ -32,8 +32,8 @@
             <string>{{PATH}}</string>
             <key>NODE_ID</key>
             <string>{{NODE_ID}}</string>
-            <key>SUBSCRIPTION_ID</key>
-            <string>{{SUBSCRIPTION_ID}}</string>
+            <key>PROJECT_ID</key>
+            <string>{{PROJECT_ID}}</string>
             <key>SHIPPABLE_NODE_ARCHITECTURE</key>
             <string>{{SHIPPABLE_NODE_ARCHITECTURE}}</string>
             <key>SHIPPABLE_NODE_OPERATING_SYSTEM</key>
