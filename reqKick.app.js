@@ -28,8 +28,8 @@ function checkENVs() {
   var who = global.who + '|' + checkENVs.name;
   logger.info(who, 'Inside');
 
-  var expectedENVs = ['STATUS_DIR', 'SCRIPTS_DIR', 'REQEXEC_BIN_PATH',
-    'NODE_ID', 'NODE_TYPE_CODE', 'SHIPPABLE_NODE_ARCHITECTURE',
+  var expectedENVs = ['STATUS_DIR', 'REQEXEC_BIN_PATH',
+    'NODE_ID', 'SHIPPABLE_NODE_ARCHITECTURE',
     'SHIPPABLE_NODE_OPERATING_SYSTEM', 'SHIPPABLE_API_URL'];
 
   var errors = [];
@@ -58,11 +58,9 @@ function setupConfig() {
 
   global.config = {
     statusDir: process.env.STATUS_DIR,
-    scriptsDir: process.env.SCRIPTS_DIR,
     reqExecBinPath: process.env.REQEXEC_BIN_PATH,
     nodeId: process.env.NODE_ID,
     projectId: process.env.PROJECT_ID,
-    nodeTypeCode: parseInt(process.env.NODE_TYPE_CODE, 10) || 7001,
     shippableNodeArchitecture: process.env.SHIPPABLE_NODE_ARCHITECTURE,
     shippableNodeOperatingSystem: process.env.SHIPPABLE_NODE_OPERATING_SYSTEM,
     pollIntervalMS: 5000
@@ -85,17 +83,6 @@ function setupConfig() {
     global.config.defaultShell = '/bin/bash';
     global.config.defaultShellArgs = ['-c'];
   }
-
-  /* Node Type Codes */
-  global.nodeTypeCodes = {
-    dynamic: 7000,
-    custom: 7001,
-    system: 7002,
-    service: 7003
-  };
-
-  global.config.isSystemNode =
-    global.config.nodeTypeCode === global.nodeTypeCodes.system;
 }
 
 function reqKick() {

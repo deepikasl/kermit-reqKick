@@ -40,15 +40,6 @@ ShippableAdapter.prototype.postClusterNodeStats =
     );
   };
 
-ShippableAdapter.prototype.postSystemNodeStats =
-  function (json, callback) {
-    this.post(
-      util.format('/systemNodeStats'),
-      json,
-      callback
-    );
-  };
-
 ShippableAdapter.prototype.putStepletById =
   function (id, json, callback) {
     this.put(
