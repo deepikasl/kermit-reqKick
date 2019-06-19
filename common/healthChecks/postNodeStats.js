@@ -95,8 +95,7 @@ function __postNodeStats(bag, done) {
       __checkMemoryUsage.bind(null, innerBag),
       __checkCpuUsage.bind(null, innerBag),
       __checkDiskUsage.bind(null, innerBag),
-      __postClusterNodeStat.bind(null, innerBag),
-      __postSystemNodeStat.bind(null, innerBag)
+      __postClusterNodeStat.bind(null, innerBag)
     ],
     function (err) {
       if (err)
@@ -219,8 +218,6 @@ function __checkDiskUsage(bag, done) {
 }
 
 function __postClusterNodeStat(bag, done) {
-  if (global.config.isSystemNode) return done();
-
   var who = bag.who + '|' + __postClusterNodeStat.name;
   logger.debug(who, 'Inside');
 
@@ -237,33 +234,6 @@ function __postClusterNodeStat(bag, done) {
   };
 
   bag.adapter.postClusterNodeStats(clusterNodeStat,
-    function (err) {
-      if (err)
-        return done(err);
-
-      return done();
-    }
-  );
-}
-
-function __postSystemNodeStat(bag, done) {
-  if (!global.config.isSystemNode) return done();
-
-  var who = bag.who + '|' + __postSystemNodeStat.name;
-  logger.debug(who, 'Inside');
-
-  var systemNodeStat = {
-    activeContainersCount: bag.activeContainersCount,
-    totalContainersCount: bag.totalContainersCount,
-    imageCount: bag.imageCount,
-    memoryUsageInPercentage: bag.memoryUsageInPercentage,
-    cpuLoadInPercentage: bag.cpuLoadInPercentage,
-    diskUsageInPercentage: bag.diskUsageInPercentage,
-    systemNodeId: global.config.nodeId,
-    reportedAt: Date.now()
-  };
-
-  bag.adapter.postSystemNodeStats(systemNodeStat,
     function (err) {
       if (err)
         return done(err);

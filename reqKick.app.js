@@ -93,9 +93,6 @@ function setupConfig() {
     system: 7002,
     service: 7003
   };
-
-  global.config.isSystemNode =
-    global.config.nodeTypeCode === global.nodeTypeCodes.system;
 }
 
 function reqKick() {
