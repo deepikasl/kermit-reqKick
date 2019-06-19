@@ -24,8 +24,6 @@
         <dict>
             <key>STATUS_DIR</key>
             <string>{{STATUS_DIR}}</string>
-            <key>SCRIPTS_DIR</key>
-            <string>{{SCRIPTS_DIR}}</string>
             <key>REQEXEC_BIN_PATH</key>
             <string>{{REQEXEC_BIN_PATH}}</string>
             <key>RUN_MODE</key>

@@ -28,7 +28,7 @@ function checkENVs() {
   var who = global.who + '|' + checkENVs.name;
   logger.info(who, 'Inside');
 
-  var expectedENVs = ['STATUS_DIR', 'SCRIPTS_DIR', 'REQEXEC_BIN_PATH',
+  var expectedENVs = ['STATUS_DIR', 'REQEXEC_BIN_PATH',
     'NODE_ID', 'SHIPPABLE_NODE_ARCHITECTURE',
     'SHIPPABLE_NODE_OPERATING_SYSTEM', 'SHIPPABLE_API_URL'];
 
@@ -58,7 +58,6 @@ function setupConfig() {
 
   global.config = {
     statusDir: process.env.STATUS_DIR,
-    scriptsDir: process.env.SCRIPTS_DIR,
     reqExecBinPath: process.env.REQEXEC_BIN_PATH,
     nodeId: process.env.NODE_ID,
     projectId: process.env.PROJECT_ID,
