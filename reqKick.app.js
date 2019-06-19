@@ -29,7 +29,7 @@ function checkENVs() {
   logger.info(who, 'Inside');
 
   var expectedENVs = ['STATUS_DIR', 'REQEXEC_BIN_PATH',
-    'NODE_ID', 'SHIPPABLE_NODE_ARCHITECTURE',
+    'NODE_ID', 'PROJECT_ID', 'SHIPPABLE_NODE_ARCHITECTURE',
     'SHIPPABLE_NODE_OPERATING_SYSTEM', 'SHIPPABLE_API_URL'];
 
   var errors = [];
