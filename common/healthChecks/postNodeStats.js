@@ -12,104 +12,38 @@ var async = require('async');
 var util = require('util');
 
 function postNodeStats() {
-  if (!global.config.nodeId) {
-    logger.verbose('Skipping node stats update as no nodeId is present');
-    return;
-  }
-
-  var bag = {};
-
-  bag.who = util.format('%s|%s', global.who, self.name);
-  logger.verbose('Posting node stats of nodeId: %s',
-    global.config.nodeId);
-
-  async.series([
-      _checkInputParams.bind(null, bag),
-      _postNodeStats.bind(null, bag),
-      _postNodeStatsPeriodically.bind(null, bag)
-    ],
-    function (err) {
-      if (err)
-        logger.error(bag.who, 'Failed to post node stats');
-      else
-        logger.verbose(bag.who, 'Successfully posted node stats');
-    }
-  );
-}
-
-function _checkInputParams(bag, next) {
-  var who = bag.who + '|' + _checkInputParams.name;
-  logger.debug(who, 'Inside');
-
-  var consoleErrors = [];
-  bag.adapter = new ShippableAdapter(global.config.apiUrl, '');
-
-  if (consoleErrors.length > 0) {
-    _.each(consoleErrors,
-      function (e) {
-        logger.error(bag.who, e);
-      }
-    );
-    return next(true);
-  }
-  return next();
-}
-
-function _postNodeStats(bag, next) {
-  var who = bag.who + '|' + _postNodeStats.name;
-  logger.debug(who, 'Inside');
-
-  __postNodeStats(bag,
-    function () {
-      return next();
-    }
-  );
-}
-
-function _postNodeStatsPeriodically(bag, next) {
-  var who = bag.who + '|' + _postNodeStatsPeriodically.name;
-  logger.debug(who, 'Inside');
-
-  setInterval(
-    function () {
-      __postNodeStats(bag);
-    },
-    STATS_PERIOD
-  );
-  return next();
-}
-
-function __postNodeStats(bag, done) {
-  var who = bag.who + '|' + __postNodeStats.name;
-  logger.debug(who, 'Inside');
-
-  var innerBag = {
-    who: bag.who,
-    adapter: bag.adapter
+  var bag = {
+    adapter: new ShippableAdapter(global.config.apiUrl, '')
   };
 
+  bag.who = util.format('%s|%s', global.who, self.name);
+  logger.verbose('Posting node stats of nodeId: %s', global.config.nodeId);
+
   async.series([
-      __checkActiveContainers.bind(null, innerBag),
-      __checkTotalContainers.bind(null, innerBag),
-      __checkImageCount.bind(null, innerBag),
-      __checkMemoryUsage.bind(null, innerBag),
-      __checkCpuUsage.bind(null, innerBag),
-      __checkDiskUsage.bind(null, innerBag),
-      __postClusterNodeStat.bind(null, innerBag)
+      _checkActiveContainers.bind(null, bag),
+      _checkTotalContainers.bind(null, bag),
+      _checkImageCount.bind(null, bag),
+      _checkMemoryUsage.bind(null, bag),
+      _checkCpuUsage.bind(null, bag),
+      _checkDiskUsage.bind(null, bag),
+      _postClusterNodeStat.bind(null, bag)
     ],
     function (err) {
       if (err)
-        logger.warn(
-          util.format('Unable to POST node stats with err:%s', err)
-        );
-      if (done)
-        return done();
+        logger.error(bag.who,
+          util.format('Failed to post node stats with error: %s', err));
+      else
+        logger.verbose(bag.who, 'Successfully posted node stats');
+
+      logger.debug(util.format('Sleeping for %d seconds before POSTing ' +
+        'clusterNodeStats', STATS_PERIOD/1000));
+      setTimeout(postNodeStats, STATS_PERIOD);
     }
   );
 }
 
-function __checkActiveContainers(bag, done) {
-  var who = bag.who + '|' + __checkActiveContainers.name;
+function _checkActiveContainers(bag, next) {
+  var who = bag.who + '|' + _checkActiveContainers.name;
   logger.debug(who, 'Inside');
 
   var scriptPath = util.format('%s/%s/activeContainerCount.%s',
@@ -123,15 +57,15 @@ function __checkActiveContainers(bag, done) {
   exec(command,
     function (err, stdout) {
       if (err)
-        return done(err);
+        return next(err);
       bag.activeContainersCount = parseInt(stdout) - 1;
-      return done();
+      return next();
     }
   );
 }
 
-function __checkTotalContainers(bag, done) {
-  var who = bag.who + '|' + __checkTotalContainers.name;
+function _checkTotalContainers(bag, next) {
+  var who = bag.who + '|' + _checkTotalContainers.name;
   logger.debug(who, 'Inside');
 
   var scriptPath = util.format('%s/%s/totalContainerCount.%s',
@@ -145,15 +79,15 @@ function __checkTotalContainers(bag, done) {
   exec(command,
     function (err, stdout) {
       if (err)
-        return done(err);
+        return next(err);
       bag.totalContainersCount = parseInt(stdout) - 1;
-      return done();
+      return next();
     }
   );
 }
 
-function __checkImageCount(bag, done) {
-  var who = bag.who + '|' + __checkImageCount.name;
+function _checkImageCount(bag, next) {
+  var who = bag.who + '|' + _checkImageCount.name;
   logger.debug(who, 'Inside');
 
   var scriptPath = util.format('%s/%s/imageCount.%s',
@@ -167,35 +101,35 @@ function __checkImageCount(bag, done) {
   exec(command,
     function (err, stdout) {
       if (err)
-        return done(err);
+        return next(err);
 
       bag.imageCount = parseInt(stdout);
-      return done();
+      return next();
     }
   );
 }
 
-function __checkMemoryUsage(bag, done) {
-  var who = bag.who + '|' + __checkMemoryUsage.name;
+function _checkMemoryUsage(bag, next) {
+  var who = bag.who + '|' + _checkMemoryUsage.name;
   logger.debug(who, 'Inside');
 
   var totalMem = os.totalmem();
   var freeMem = os.freemem();
 
   bag.memoryUsageInPercentage = (totalMem - freeMem) * 100 / totalMem;
-  return done();
+  return next();
 }
 
-function __checkCpuUsage(bag, done) {
-  var who = bag.who + '|' + __checkCpuUsage.name;
+function _checkCpuUsage(bag, next) {
+  var who = bag.who + '|' + _checkCpuUsage.name;
   logger.debug(who, 'Inside');
 
   bag.cpuLoadInPercentage = (_.first(os.loadavg())/os.cpus().length) * 100;
-  return done();
+  return next();
 }
 
-function __checkDiskUsage(bag, done) {
-  var who = bag.who + '|' + __checkDiskUsage.name;
+function _checkDiskUsage(bag, next) {
+  var who = bag.who + '|' + _checkDiskUsage.name;
   logger.debug(who, 'Inside');
 
   var scriptPath = util.format('%s/%s/diskUsage.%s',
@@ -209,16 +143,16 @@ function __checkDiskUsage(bag, done) {
   exec(command,
     function (err, stdout) {
       if (err)
-        return done(err);
+        return next(err);
 
       bag.diskUsageInPercentage = parseInt(stdout);
-      return done();
+      return next();
     }
   );
 }
 
-function __postClusterNodeStat(bag, done) {
-  var who = bag.who + '|' + __postClusterNodeStat.name;
+function _postClusterNodeStat(bag, next) {
+  var who = bag.who + '|' + _postClusterNodeStat.name;
   logger.debug(who, 'Inside');
 
   var clusterNodeStat = {
@@ -236,9 +170,9 @@ function __postClusterNodeStat(bag, done) {
   bag.adapter.postClusterNodeStats(clusterNodeStat,
     function (err) {
       if (err)
-        return done(err);
+        return next(err);
 
-      return done();
+      return next();
     }
   );
 }
