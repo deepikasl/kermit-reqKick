@@ -70,12 +70,7 @@ function _postNodeStatsPeriodically(bag, next) {
   var who = bag.who + '|' + _postNodeStatsPeriodically.name;
   logger.debug(who, 'Inside');
 
-  setInterval(
-    function () {
-      __postNodeStats(bag);
-    },
-    STATS_PERIOD
-  );
+  __postNodeStats(bag);
   return next();
 }
 
@@ -102,8 +97,13 @@ function __postNodeStats(bag, done) {
         logger.warn(
           util.format('Unable to POST node stats with err:%s', err)
         );
-      if (done)
+      if (done) {
         return done();
+      } else {
+        logger.debug(util.format('Sleeping for %d seconds before POSTing ' +
+          'clusterNodeStats', STATS_PERIOD/1000));
+        setTimeout(__postNodeStats.bind(null, bag), STATS_PERIOD);
+      }
     }
   );
 }
