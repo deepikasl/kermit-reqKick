@@ -174,9 +174,8 @@ function _postClusterNodeStat(bag, next) {
     function (err, clusterNodeStat, response) {
       if (err) {
         // Stop posting ClusterNodeStats if the clusterNode is not found.
-        if (response && (response.statusCode === 404)) {
+        if (response && (response.statusCode === 404))
           bag.stopStatsPosting = true;
-        }
         return next(err);
       }
 
