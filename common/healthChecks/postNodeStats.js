@@ -13,7 +13,8 @@ var util = require('util');
 
 function postNodeStats() {
   var bag = {
-    adapter: new ShippableAdapter(global.config.apiUrl, '')
+    adapter: new ShippableAdapter(global.config.apiUrl, ''),
+    stopStatsPosting: false
   };
 
   bag.who = util.format('%s|%s', global.who, self.name);
@@ -35,9 +36,11 @@ function postNodeStats() {
       else
         logger.verbose(bag.who, 'Successfully posted node stats');
 
-      logger.debug(util.format('Sleeping for %d seconds before POSTing ' +
-        'clusterNodeStats', STATS_PERIOD/1000));
-      setTimeout(postNodeStats, STATS_PERIOD);
+      if (!bag.stopStatsPosting) {
+        logger.debug(util.format('Sleeping for %d seconds before POSTing ' +
+          'clusterNodeStats', STATS_PERIOD/1000));
+        setTimeout(postNodeStats, STATS_PERIOD);
+      }
     }
   );
 }
@@ -168,9 +171,13 @@ function _postClusterNodeStat(bag, next) {
   };
 
   bag.adapter.postClusterNodeStats(clusterNodeStat,
-    function (err) {
-      if (err)
+    function (err, clusterNodeStat, response) {
+      if (err) {
+        // Stop posting ClusterNodeStats if the clusterNode is not found.
+        if (response && (response.statusCode === 404))
+          bag.stopStatsPosting = true;
         return next(err);
+      }
 
       return next();
     }
