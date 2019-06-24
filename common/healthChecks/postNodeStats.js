@@ -36,12 +36,10 @@ function postNodeStats() {
       else
         logger.verbose(bag.who, 'Successfully posted node stats');
 
-      if (bag.stopStatsPosting) {
-        clearTimeout(bag.timeout);
-      } else {
+      if (!bag.stopStatsPosting) {
         logger.debug(util.format('Sleeping for %d seconds before POSTing ' +
           'clusterNodeStats', STATS_PERIOD/1000));
-        bag.timeout = setTimeout(postNodeStats, STATS_PERIOD);
+        setTimeout(postNodeStats, STATS_PERIOD);
       }
     }
   );
