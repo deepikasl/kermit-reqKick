@@ -63,7 +63,8 @@ function setupConfig() {
     projectId: process.env.PROJECT_ID,
     shippableNodeArchitecture: process.env.SHIPPABLE_NODE_ARCHITECTURE,
     shippableNodeOperatingSystem: process.env.SHIPPABLE_NODE_OPERATING_SYSTEM,
-    pollIntervalMS: 5000
+    pollIntervalMS: 5000,
+    execTemplatesDir: process.env.EXECTEMPLATES_DIR
   };
 
   global.config.stepWhoPath = path.join(global.config.statusDir, 'step.who');
