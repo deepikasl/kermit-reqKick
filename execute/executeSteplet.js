@@ -26,7 +26,8 @@ function executeSteplet(externalBag, callback) {
     pipelineId: externalBag.pipelineId,
     stepletEnvPath: externalBag.stepletEnvPath,
     statusCode: null,
-    stepStatusPoller: externalBag.stepStatusPoller
+    stepStatusPoller: externalBag.stepStatusPoller,
+    stepDockerContainerName: externalBag.stepDockerContainerName
   };
 
   bag.who = util.format('%s|execute|%s', name, self.name);
@@ -69,7 +70,8 @@ function _checkInputParams(bag, next) {
     'pipelineId',
     'stepletScriptPath',
     'stepletEnvPath',
-    'stepStatusPoller'
+    'stepStatusPoller',
+    'stepDockerContainerName'
   ];
 
   var paramErrors = [];
@@ -146,7 +148,8 @@ function _watchStepStatus(bag, next) {
             global.config.helperScriptsDir,
             'utilities', 'killContainer.' + global.config.scriptExtension);
 
-          scriptExecutor(killContainerScriptPath, ['step-' + bag.stepletId],
+          scriptExecutor(killContainerScriptPath,
+            [ bag.stepDockerContainerName ],
             function (err) {
               if (err) {
                 logger.warn(

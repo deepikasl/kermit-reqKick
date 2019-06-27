@@ -25,7 +25,8 @@ function createStepletScript(externalBag, callback) {
     stepWorkspacePath: externalBag.stepWorkspacePath,
     pipelineWorkspacePath: externalBag.pipelineWorkspacePath,
     stepJsonPath: externalBag.stepJsonPath,
-    stepId: externalBag.stepId
+    stepId: externalBag.stepId,
+    stepDockerContainerName: externalBag.stepDockerContainerName
   };
   bag.who = util.format('%s|execute|step|%s', name, self.name);
   logger.info(bag.who, 'Inside');
@@ -68,7 +69,8 @@ function _checkInputParams(bag, next) {
     'stepConsoleAdapter',
     'dependencyStateDir',
     'outputDir',
-    'stepId'
+    'stepId',
+    'stepDockerContainerName'
   ];
 
   var paramErrors = [];
@@ -87,8 +89,6 @@ function _checkInputParams(bag, next) {
     return next(hasErrors);
   }
 
-  bag.stepDockerContainerName = util.format('step-%s-%s', bag.stepId,
-    bag.stepletId);
   return next();
 }
 

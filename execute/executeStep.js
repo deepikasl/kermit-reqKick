@@ -368,13 +368,16 @@ function _createStepletScript(bag, next) {
 
   bag.stepletDir = path.join(bag.stepDir,
     bag.stepletsByStepId[bag.step.id][0].id.toString());
+  bag.stepletId = bag.stepletsByStepId[bag.step.id][0].id;
+  bag.stepDockerContainerName = util.format('step-%s-%s', bag.stepId,
+    bag.stepletId);
   var innerBag = {
     stepData: bag.stepData,
     stepEnvs: bag.stepEnvs,
     execTemplatesDir: bag.execTemplatesDir,
     stepletScriptPath: bag.stepletScriptPaths[0],
     builderApiToken: bag.builderApiToken,
-    stepletId: bag.stepletsByStepId[bag.step.id][0].id,
+    stepletId: bag.stepletId,
     pipelineId: bag.step.pipelineId,
     stepDir: bag.stepDir,
     runDir: bag.runDir,
@@ -385,7 +388,8 @@ function _createStepletScript(bag, next) {
     stepWorkspacePath: bag.stepWorkspacePath,
     pipelineWorkspacePath: bag.pipelineWorkspacePath,
     stepJsonPath: bag.stepJsonPath,
-    stepId: bag.stepId
+    stepId: bag.stepId,
+    stepDockerContainerName: bag.stepDockerContainerName
   };
 
   createStepletScript(innerBag,
@@ -467,7 +471,8 @@ function _executeSteplet(bag, next) {
     stepId: bag.stepId,
     builderApiAdapter: bag.builderApiAdapter,
     stepletEnvPath: path.join(bag.stepletDir, 'steplet.env'),
-    stepStatusPoller: bag.stepStatusPoller
+    stepStatusPoller: bag.stepStatusPoller,
+    stepDockerContainerName: bag.stepDockerContainerName
   };
 
   executeSteplet(innerBag,
