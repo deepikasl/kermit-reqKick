@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>com.shippable.reqKick.{{UUID}}</string>
+
+        <key>ProgramArguments</key>
+        <array>
+            <string>{{NODE_PATH}}</string>
+            <string>{{REQKICK_DIR}}/reqKick.app.js</string>
+        </array>
+
+        <key>Nice</key>
+        <integer>1</integer>
+
+        <key>RunAtLoad</key>
+        <true/>
+
+        <key>UserName</key>
+        <string>{{USER_NAME}}</string>
+
+        <key>EnvironmentVariables</key>
+        <dict>
+            <key>STATUS_DIR</key>
+            <string>{{STATUS_DIR}}</string>
+            <key>REQEXEC_BIN_PATH</key>
+            <string>{{REQEXEC_BIN_PATH}}</string>
+            <key>RUN_MODE</key>
+            <string>{{RUN_MODE}}</string>
+            <key>PATH</key>
+            <string>{{PATH}}</string>
+            <key>NODE_ID</key>
+            <string>{{NODE_ID}}</string>
+            <key>PROJECT_ID</key>
+            <string>{{PROJECT_ID}}</string>
+            <key>SHIPPABLE_NODE_ARCHITECTURE</key>
+            <string>{{SHIPPABLE_NODE_ARCHITECTURE}}</string>
+            <key>SHIPPABLE_NODE_OPERATING_SYSTEM</key>
+            <string>{{SHIPPABLE_NODE_OPERATING_SYSTEM}}</string>
+            <key>SHIPPABLE_API_URL</key>
+            <string>{{SHIPPABLE_API_URL}}</string>
+        </dict>
+
+        <key>StandardErrorPath</key>
+        <string>{{REQKICK_DIR}}/reqKick_{{UUID}}.err</string>
+
+        <key>StandardOutPath</key>
+        <string>{{REQKICK_DIR}}/reqKick_{{UUID}}.out</string>
+    </dict>
+</plist>
