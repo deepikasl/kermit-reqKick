@@ -130,7 +130,7 @@ function _putStepletToProcessing(bag, next) {
 }
 
 function _watchStepStatus(bag, next) {
-  var who = bag.who + '|' + _executeScript.name;
+  var who = bag.who + '|' + _watchStepStatus.name;
   logger.verbose(who, 'Inside');
 
   var eventEmitter = bag.stepStatusPoller.getEventEmitter();

@@ -14,8 +14,9 @@ _.templateSettings = _.extend(_.templateSettings,
 var isDirectory = require('../../helpers/utilities/isDirectory.js');
 var isFile = require('../../helpers/utilities/isFile.js');
 
-var assemblyOrder = ['onSuccess', 'onFailure', 'onComplete', 'output',
-  'environmentVariables', 'image', 'auto', 'dependsOn', 'onStart', 'onExecute'];
+var assemblyOrder = ['onSuccess', 'onFailure', 'onComplete',
+  'cleanupIntegrations', 'output', 'environmentVariables', 'image', 'auto',
+  'dependsOn', 'onStart', 'onExecute'];
 var singleQuoteEscapeSections = ['onSuccess', 'onFailure', 'onComplete',
   'onStart', 'onExecute'];
 var nonNativeStepTypes = ['Bash', 'powershell'];
