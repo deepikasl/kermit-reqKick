@@ -46,8 +46,8 @@ function executeStep(externalBag, callback) {
       _constructStepJson.bind(null, bag),
       _addStepJson.bind(null, bag),
       _downloadArtifacts.bind(null, bag),
-      _createIntegrationScripts.bind(null, bag),
       _createDependencyScripts.bind(null, bag),
+      _createIntegrationScripts.bind(null, bag),
       _createStepletScript.bind(null, bag),
       _updateStepToProcessing.bind(null, bag),
       _closeSetupGroup.bind(null, bag),
@@ -336,6 +336,32 @@ function _downloadArtifacts(bag, next) {
   );
 }
 
+function _createDependencyScripts(bag, next) {
+  if (bag.error || bag.cancelling) return next();
+  if (bag.stepData && _.isEmpty(bag.stepData.resources)) return next();
+
+  var who = bag.who + '|' + _createDependencyScripts.name;
+  logger.verbose(who, 'Inside');
+
+  var innerBag = {
+    execTemplatesDir: bag.execTemplatesDir,
+    stepData: bag.stepData,
+    stepConsoleAdapter: bag.stepConsoleAdapter
+  };
+
+  createDependencyScripts(innerBag,
+    function (err, resultBag) {
+      if (err) {
+        bag.isSetupGrpSuccess = false;
+        bag.error = true;
+      }
+
+      bag.stepData = resultBag.stepData;
+      return next();
+    }
+  );
+}
+
 function _createIntegrationScripts(bag, next) {
   if (bag.error || bag.cancelling) return next();
   if (bag.stepData && _.isEmpty(bag.stepData.integrations)) return next();
@@ -351,32 +377,6 @@ function _createIntegrationScripts(bag, next) {
   };
 
   createIntegrationScripts(innerBag,
-    function (err, resultBag) {
-      if (err) {
-        bag.isSetupGrpSuccess = false;
-        bag.error = true;
-      }
-
-      bag.stepData = resultBag.stepData;
-      return next();
-    }
-  );
-}
-
-function _createDependencyScripts(bag, next) {
-  if (bag.error || bag.cancelling) return next();
-  if (bag.stepData && _.isEmpty(bag.stepData.resources)) return next();
-
-  var who = bag.who + '|' + _createDependencyScripts.name;
-  logger.verbose(who, 'Inside');
-
-  var innerBag = {
-    execTemplatesDir: bag.execTemplatesDir,
-    stepData: bag.stepData,
-    stepConsoleAdapter: bag.stepConsoleAdapter
-  };
-
-  createDependencyScripts(innerBag,
     function (err, resultBag) {
       if (err) {
         bag.isSetupGrpSuccess = false;
