@@ -135,8 +135,11 @@ function _addDependencyScriptsToStep(bag, next) {
 
   var step = bag.stepData.step || {};
   step.execution = step.execution || {};
-  if (!_.isEmpty(bag.inDependencyScripts))
-    step.execution.dependsOn = bag.inDependencyScripts;
+  if (!_.isEmpty(bag.inDependencyScripts)) {
+    step.execution.dependsOn = step.execution.dependsOn || [];
+    step.execution.dependsOn = step.execution.dependsOn.concat(
+      bag.inDependencyScripts);
+  }
 
   if (!_.isEmpty(bag.outDependencyScripts))
     step.execution.output = bag.outDependencyScripts;

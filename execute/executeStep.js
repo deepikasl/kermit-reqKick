@@ -10,6 +10,7 @@ var prepData = require('./step/prepData.js');
 var setupDirectories = require('./step/setupDirectories.js');
 var constructStepJson = require('./step/constructStepJson.js');
 var createDependencyScripts = require('./step/createDependencyScripts.js');
+var createIntegrationScripts = require('./step/createIntegrationScripts.js');
 var createStepletScript = require('./step/createStepletScript.js');
 var executeSteplet = require('./executeSteplet.js');
 var postReports = require('./step/postReports.js');
@@ -45,6 +46,7 @@ function executeStep(externalBag, callback) {
       _constructStepJson.bind(null, bag),
       _addStepJson.bind(null, bag),
       _downloadArtifacts.bind(null, bag),
+      _createIntegrationScripts.bind(null, bag),
       _createDependencyScripts.bind(null, bag),
       _createStepletScript.bind(null, bag),
       _updateStepToProcessing.bind(null, bag),
@@ -334,6 +336,33 @@ function _downloadArtifacts(bag, next) {
   );
 }
 
+function _createIntegrationScripts(bag, next) {
+  if (bag.error || bag.cancelling) return next();
+  if (bag.stepData && _.isEmpty(bag.stepData.integrations)) return next();
+
+  var who = bag.who + '|' + _createIntegrationScripts.name;
+  logger.verbose(who, 'Inside');
+
+  var innerBag = {
+    execTemplatesDir: bag.execTemplatesDir,
+    stepData: bag.stepData,
+    runStepConnections: bag.runStepConnections,
+    stepConsoleAdapter: bag.stepConsoleAdapter
+  };
+
+  createIntegrationScripts(innerBag,
+    function (err, resultBag) {
+      if (err) {
+        bag.isSetupGrpSuccess = false;
+        bag.error = true;
+      }
+
+      bag.stepData = resultBag.stepData;
+      return next();
+    }
+  );
+}
+
 function _createDependencyScripts(bag, next) {
   if (bag.error || bag.cancelling) return next();
   if (bag.stepData && _.isEmpty(bag.stepData.resources)) return next();
@@ -458,6 +487,7 @@ function _closeSetupGroup(bag, next) {
 }
 
 function _executeSteplet(bag, next) {
+  if (bag.error || bag.cancelling) return next();
   if (_.isEmpty(bag.step)) return next();
 
   var who = bag.who + '|' + _executeSteplet.name;
