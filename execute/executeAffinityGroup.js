@@ -77,8 +77,7 @@ function _updateClusterNodeStatus(bag, next) {
   logger.verbose(who, 'Inside');
 
   var update = {
-    statusCode: global.systemCodesByName.processing.code,
-    stepId: bag.stepIds[0]
+    statusCode: global.systemCodesByName.processing.code
   };
 
   bag.builderApiAdapter.putClusterNodeById(global.config.nodeId, update,

@@ -39,6 +39,8 @@ function executeStep(externalBag, callback) {
   async.series([
       _checkInputParams.bind(null, bag),
       _getStep.bind(null, bag),
+      _openSetupGroup.bind(null, bag),
+      _updateStepInClusterNode.bind(null, bag),
       _getSteplets.bind(null, bag),
       _prepData.bind(null, bag),
       _setupDirectories.bind(null, bag),
@@ -121,15 +123,52 @@ function _getStep(bag, next) {
   );
 }
 
-function _getSteplets(bag, next) {
+function _openSetupGroup(bag, next) {
   if (bag.error || bag.cancelling) return next();
 
-  var who = bag.who + '|' + _getSteplets.name;
+  var who = bag.who + '|' + _openSetupGroup.name;
   logger.verbose(who, 'Inside');
 
   bag.stepConsoleAdapter.openGrp('Setup');
   // We don't know where the group will end so need a flag
   bag.isSetupGrpSuccess = true;
+
+  return next();
+}
+
+function _updateStepInClusterNode(bag, next) {
+  if (bag.error || bag.cancelling) return next();
+
+  var who = bag.who + '|' + _updateStepInClusterNode.name;
+  logger.verbose(who, 'Inside');
+
+  var update = {
+    stepId: bag.stepId
+  };
+
+  bag.builderApiAdapter.putClusterNodeById(global.config.nodeId, update,
+    function (err) {
+      if (err) {
+        logger.warn(util.format('%s, putClusterNodeById for nodeId %s failed ' +
+          'with error: %s', bag.who, global.config.nodeId, err));
+        bag.stepConsoleAdapter.openCmd('Updating node with step id');
+        bag.stepConsoleAdapter.publishMsg(util.format(
+           'Failed to update node %s with stepId %s with error: %s',
+           global.config.nodeId, bag.stepId, err)
+        );
+        bag.stepConsoleAdapter.closeCmd(false);
+        bag.error = true;
+      }
+      return next();
+    }
+  );
+}
+
+function _getSteplets(bag, next) {
+  if (bag.error || bag.cancelling) return next();
+
+  var who = bag.who + '|' + _getSteplets.name;
+  logger.verbose(who, 'Inside');
 
   bag.stepConsoleAdapter.openCmd('Fetching steplets');
 
