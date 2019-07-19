@@ -19,43 +19,46 @@ upload_step_artifacts() {
     return 0
   fi
 
-  local archive_file="$STEP_WORKSPACE_DIR/$STEP_ARTIFACT_NAME"
-
-  tar -czf $archive_file -C $STEP_WORKSPACE_DIR/upload .
-
-  echo 'Saving step artifacts'
-
-  local put_cmd="curl \
-      -s -S \
-      --connect-timeout 60 \
-      --max-time 120 \
-      -XPUT '$STEP_ARTIFACT_URL' \
-      -o /dev/null \
-      -w \"%{http_code}\" \
-      -T $archive_file"
-
-  if [ ! -z "$STEP_ARTIFACT_URL_OPTS" ]; then
-    put_cmd="curl \
-      -s -S \
-      --connect-timeout 60 \
-      --max-time 120 \
-      $STEP_ARTIFACT_URL_OPTS \
-      -XPUT '$STEP_ARTIFACT_URL' \
-      -o /dev/null \
-      -w \"%{http_code}\" \
-      -T $archive_file"
-  fi
-
-  local put_status_code=$(eval "$put_cmd")
-
-  if [ "$put_status_code" -ge 200 ] && [ "$put_status_code" -le 299 ]; then
-    echo 'Saved step artifacts'
+  if [ -z "$(ls -A $STEP_WORKSPACE_DIR/upload)" ]; then
+    echo "No step artifacts to save."
   else
-    echo "Failed to save step artifacts. Status code $put_status_code."
-    return 1
-  fi
+    local archive_file="$STEP_WORKSPACE_DIR/$STEP_ARTIFACT_NAME"
 
-  rm $archive_file
+    tar -czf $archive_file -C $STEP_WORKSPACE_DIR/upload .
+
+    echo 'Saving step artifacts'
+
+    local put_cmd="curl \
+        -s -S \
+        --connect-timeout 60 \
+        --max-time 120 \
+        -XPUT '$STEP_ARTIFACT_URL' \
+        -o /dev/null \
+        -w \"%{http_code}\" \
+        -T $archive_file"
+
+    if [ ! -z "$STEP_ARTIFACT_URL_OPTS" ]; then
+      put_cmd="curl \
+        -s -S \
+        --connect-timeout 60 \
+        --max-time 120 \
+        $STEP_ARTIFACT_URL_OPTS \
+        -XPUT '$STEP_ARTIFACT_URL' \
+        -o /dev/null \
+        -w \"%{http_code}\" \
+        -T $archive_file"
+    fi
+
+    local put_status_code=$(eval "$put_cmd")
+    if [ "$put_status_code" -ge 200 ] && [ "$put_status_code" -le 299 ]; then
+      echo 'Saved step artifacts'
+    else
+      echo "Failed to save step artifacts. Status code $put_status_code."
+      return 1
+    fi
+
+    rm $archive_file
+  fi
 }
 
 upload_run_state() {
