@@ -70,44 +70,42 @@ upload_run_state() {
   local archive_file="$STEP_WORKSPACE_DIR/$RUN_ARTIFACT_NAME"
 
   if [ -z "$(ls -A $RUN_WORKSPACE_DIR)" ]; then
-    echo "Run state is empty."
-  fi
-
-  tar -czf $archive_file -C $RUN_WORKSPACE_DIR .
-
-  echo 'Saving run state'
-
-  local put_cmd="curl \
-      -s -S \
-      --connect-timeout 60 \
-      --max-time 120 \
-      -XPUT '$RUN_ARTIFACT_URL' \
-      -o /dev/null \
-      -w \"%{http_code}\" \
-      -T $archive_file"
-
-  if [ ! -z "$RUN_ARTIFACT_URL_OPTS" ]; then
-    put_cmd="curl \
-      -s -S \
-      --connect-timeout 60 \
-      --max-time 120 \
-      $RUN_ARTIFACT_URL_OPTS \
-      -XPUT '$RUN_ARTIFACT_URL' \
-      -o /dev/null \
-      -w \"%{http_code}\" \
-      -T $archive_file"
-  fi
-
-  local put_status_code=$(eval "$put_cmd")
-
-  if [ "$put_status_code" -ge 200 ] && [ "$put_status_code" -le 299 ]; then
-    echo 'Saved run state'
+    echo "No run state to save."
   else
-    echo "Failed to save run state. Status code $put_status_code."
-    return 1
-  fi
+    tar -czf $archive_file -C $RUN_WORKSPACE_DIR .
+    echo 'Saving run state'
 
-  rm $archive_file
+    local put_cmd="curl \
+        -s -S \
+        --connect-timeout 60 \
+        --max-time 120 \
+        -XPUT '$RUN_ARTIFACT_URL' \
+        -o /dev/null \
+        -w \"%{http_code}\" \
+        -T $archive_file"
+
+    if [ ! -z "$RUN_ARTIFACT_URL_OPTS" ]; then
+      put_cmd="curl \
+        -s -S \
+        --connect-timeout 60 \
+        --max-time 120 \
+        $RUN_ARTIFACT_URL_OPTS \
+        -XPUT '$RUN_ARTIFACT_URL' \
+        -o /dev/null \
+        -w \"%{http_code}\" \
+        -T $archive_file"
+    fi
+
+    local put_status_code=$(eval "$put_cmd")
+    if [ "$put_status_code" -ge 200 ] && [ "$put_status_code" -le 299 ]; then
+      echo 'Saved run state'
+    else
+      echo "Failed to save run state. Status code $put_status_code."
+      return 1
+    fi
+
+    rm $archive_file
+  fi
 }
 
 upload_pipeline_state() {
