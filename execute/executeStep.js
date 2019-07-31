@@ -52,6 +52,7 @@ function executeStep(externalBag, callback) {
       _createIntegrationScripts.bind(null, bag),
       _createStepletScript.bind(null, bag),
       _updateStepToProcessing.bind(null, bag),
+      _updateRunToProcessing.bind(null, bag),
       _closeSetupGroup.bind(null, bag),
       _executeSteplet.bind(null, bag),
       _clearStepStatusPoller.bind(null, bag),
@@ -509,6 +510,31 @@ function _updateStepToProcessing(bag, next) {
         'Successfully updated step status to processing for stepId: ' +
         bag.step.id);
       bag.stepConsoleAdapter.closeCmd(true);
+      return next();
+
+    }
+  );
+}
+
+function _updateRunToProcessing(bag, next) {
+  if (bag.error || bag.cancelling) return next();
+
+  var who = bag.who + '|' + _updateRunToProcessing.name;
+  logger.verbose(who, 'Inside');
+
+  var update = {
+    statusCode: global.systemCodesByName.processing.code
+  };
+  bag.builderApiAdapter.putRunById(bag.step.runId, update,
+    function (err, res) {
+      if (err) {
+        var msg = util.format('%s, putRunById for runId %s failed ' +
+          'with error: %s', bag.who, bag.step.runId, util.inspect(res));
+        logger.warn(msg);
+        bag.isSetupGrpSuccess = false;
+        bag.error = true;
+        return next();
+      }
       return next();
 
     }
