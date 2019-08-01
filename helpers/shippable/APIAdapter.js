@@ -263,6 +263,15 @@ ShippableAdapter.prototype.putClusterNodeById =
       callback
     );
   };
+// runs
+ShippableAdapter.prototype.putRunById =
+function (id, json, callback) {
+  this.put(
+    util.format('/runs/%s', id),
+    json,
+    callback
+  );
+};
 
 // steps
 ShippableAdapter.prototype.putStepById =
