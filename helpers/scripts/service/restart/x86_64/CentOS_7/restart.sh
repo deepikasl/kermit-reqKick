@@ -1,3 +1,3 @@
 #!/bin/bash -e
 
-sudo systemctl restart shippable-reqKick
+systemctl restart shippable-reqKick
