@@ -1,4 +1,4 @@
 #!/bin/bash -e
 
-sudo systemctl stop shippable-reqKick
-sudo systemctl disable shippable-reqKick
+systemctl stop shippable-reqKick
+systemctl disable shippable-reqKick
